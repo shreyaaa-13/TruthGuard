@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section label {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .input-section textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .input-section textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card.fake {
+            background: #ffebee;
+            border-left: 5px solid #f44336;
+        }
+
+        .result-card.real {
+            background: #e8f5e9;
+            border-left: 5px solid #4caf50;
+        }
+
+        .result-card h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .result-card.fake h2 {
+            color: #f44336;
+        }
+
+        .result-card.real h2 {
+            color: #4caf50;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-box h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .metric-box .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .features {
+            margin-top: 30px;
+        }
+
+        .features h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .feature-tag {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .warning {
+            background: #fff3e0;
+            color: #e65100;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .examples {
+            margin-top: 20px;
+        }
+
+        .example-btn {
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Fake News Detector</h1>
+            <p>AI-Powered News Verification System</p>
+        </div>
+
+        <div class="main-card">
+            {% if not model_loaded %}
+            <div class="warning">
+                <strong>⚠️ Warning:</strong> Model not loaded. Please train the model first by running:
+                <code>python src/train_model.py</code>
+            </div>
+            {% endif %}
+
+            <div class="input-section">
+                <label for="newsText">📝 Enter News Article:</label>
+                <textarea id="newsText" placeholder="Paste a news article here..."></textarea>
+            </div>
+
+            <div class="examples">
+                <p><strong>Try an example:</strong></p>
+                <button class="example-btn" onclick="loadExample('fake')">Fake News Example</button>
+                <button class="example-btn" onclick="loadExample('real')">Real News Example</button>
+            </div>
+
+            <div class="button-section">
+                <button class="analyze-btn" onclick="analyzeText()" {% if not model_loaded %}disabled{% endif %}>
+                    🔍 Analyze Article
+                </button>
+            </div>
+
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing article...</p>
+            </div>
+
+            <div class="error" id="errorMessage"></div>
+
+            <div class="results" id="results">
+                <div class="result-card" id="resultCard">
+                    <h2 id="predictionText"></h2>
+                    <p id="predictionDescription"></p>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-box">
+                        <h3>Confidence</h3>
+                        <div class="value" id="confidence">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Fake Probability</h3>
+                        <div class="value" id="fakeProb">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Real Probability</h3>
+                        <div class="value" id="realProb">-</div>
+                    </div>
+                </div>
+
+                <div class="features">
+                    <h3>🔑 Key Features:</h3>
+                    <div class="feature-list" id="featureList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            fake: `BREAKING: Scientists Discover That Eating Chocolate Makes You Immortal!
+A groundbreaking study reveals that consuming 10 chocolate bars daily can completely stop the aging process. Researchers claim this miracle food contains secret compounds that reverse aging. Doctors are shocked by these findings that pharmaceutical companies don't want you to know about!`,
+            real: `The Federal Reserve announced today that it will maintain interest rates at their current levels following a two-day policy meeting. The decision comes after careful analysis of economic indicators including inflation data and employment figures. Fed Chair stated that the committee will continue to monitor economic conditions and adjust policy as needed to support maximum employment and price stability.`
+        };
+
+        function loadExample(type) {
+            document.getElementById('newsText').value = examples[type];
+        }
+
+        async function analyzeText() {
+            const text = document.getElementById('newsText').value.trim();
+            
+            if (!text) {
+                showError('Please enter some text to analyze.');
+                return;
+            }
+
+            // Show loading
+            document.querySelector('.loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError('An error occurred: ' + error.message);
+            } finally {
+                document.querySelector('.loading').style.display = 'none';
+            }
+        }
+
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            const results = document.getElementById('results');
+
+            // Set prediction
+            if (data.prediction === 'FAKE') {
+                resultCard.className = 'result-card fake';
+                document.getElementById('predictionText').textContent = '❌ FAKE NEWS DETECTED';
+                document.getElementById('predictionDescription').textContent = 
+                    'This article shows characteristics of fake or misleading news.';
+            } else {
+                resultCard.className = 'result-card real';
+                document.getElementById('predictionText').textContent = '✅ LIKELY REAL NEWS';
+                document.getElementById('predictionDescription').textContent = 
+                    'This article appears to be legitimate news content.';
+            }
+
+            // Set metrics
+            document.getElementById('confidence').textContent = data.confidence + '%';
+            document.getElementById('fakeProb').textContent = data.fake_probability + '%';
+            document.getElementById('realProb').textContent = data.real_probability + '%';
+
+            // Set features
+            const featureList = document.getElementById('featureList');
+            featureList.innerHTML = '';
+            
+            if (data.top_features && data.top_features.length > 0) {
+                data.top_features.forEach(feature => {
+                    const tag = document.createElement('span');
+                    tag.className = 'feature-tag';
+                    tag.textContent = feature[0];
+                    featureList.appendChild(tag);
+                });
+            }
+
+            // Show results
+            results.style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Allow Enter key to submit (with Ctrl/Cmd)
+        document.getElementById('newsText').addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                analyzeText();
+            }
+        });
+    </script>
+</body>
+</html>
